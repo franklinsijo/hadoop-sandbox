@@ -1,0 +1,4 @@
+---
+namenode_dir:	"{{ sb_data_dir }}/name/"
+datanode_dir:	"{{ sb_data_dir }}/data/"
+replication_factor:	2

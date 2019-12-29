@@ -1,0 +1,43 @@
+# Installs Sqoop
+---
+- set_fact:
+    sqoop_tarball: "{{ sb_install_dir }}/{{ sqoop.filename }}"
+
+- name: Download Sqoop binary tarball
+  get_url:
+    url: "{{ sqoop.url }}"
+    dest: "{{ sqoop_tarball }}"
+
+- name: Extract downloaded tarball
+  unarchive:
+    src: "{{ sqoop_tarball }}"
+    dest: "{{ sb_install_dir }}"
+    owner: "{{ exec_user }}"
+    group: "{{ exec_user }}"
+    remote_src: yes
+
+- set_fact:
+    sqoop_home: "{{ sb_install_dir }}/{{ sqoop.creates }}"
+
+- name: Configure Sqoop libraries
+  copy:
+    src: "{{ item }}"
+    dest: "{{ sqoop_home }}/lib/{{ item | basename }}"
+    owner: "{{ exec_user }}"
+    group: "{{ exec_user }}"
+  with_fileglob:
+    - ../files/*
+
+- name: Update bashrc for Sqoop
+  lineinfile:
+    path: /etc/profile
+    line: 'export {{ item.key }}={{ item.val }}'
+  with_items:
+    - { key: 'SQOOP_HOME', val: '{{ sqoop_home }}' }
+    - { key: 'PATH', val: '{{ sqoop_home }}/bin:$PATH' }
+  when: os == 'Debian' or os == 'Ubuntu'
+
+- name: Delete downloaded tarball
+  file:
+    path: "{{ sqoop_tarball }}"
+    state: absent

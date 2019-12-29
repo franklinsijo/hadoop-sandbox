@@ -1,0 +1,34 @@
+# Installs Kafka
+---
+- set_fact:
+    kafka_tarball: "{{ sb_install_dir }}/{{ kafka.filename }}"
+
+- name: Download Kafka binary tarball
+  get_url:
+    url: "{{ kafka.url }}"
+    dest: "{{ kafka_tarball }}"
+
+- name: Extract downloaded tarball
+  unarchive:
+    src: "{{ kafka_tarball }}"
+    dest: "{{ sb_install_dir }}"
+    owner: "{{ exec_user }}"
+    group: "{{ exec_user }}"
+    remote_src: yes
+
+- set_fact:
+    kafka_home: "{{ sb_install_dir }}/{{ kafka.creates }}"
+
+- name: Update bashrc for Kafka
+  lineinfile:
+    path: /etc/profile
+    line: 'export {{ item.key }}={{ item.val }}'
+  with_items:
+    - { key: 'KAFKA_HOME', val: '{{ kafka_home }}' }
+    - { key: 'PATH', val: '{{ kafka_home }}/bin:$PATH' }
+  when: os == 'Debian' or os == 'Ubuntu'
+
+- name: Delete downloaded tarball
+  file:
+    path: "{{ kafka_tarball }}"
+    state: absent

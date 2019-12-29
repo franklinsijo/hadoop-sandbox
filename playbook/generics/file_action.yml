@@ -1,0 +1,7 @@
+### Performs Linux file operations. Requires two arguments: filename, state
+---
+- file:
+    path: "{{ filename }}"
+    owner: "{{ exec_user }}"
+    group: "{{ exec_user }}"
+    state: "{{ state }}"

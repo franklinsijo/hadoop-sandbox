@@ -1,0 +1,75 @@
+---
+- hosts: localhost
+  gather_facts: no
+
+  vars:
+    sandbox_install_dir: "{{ install_dir }}/sandbox"
+    sandbox_data_dir: "{{ data_dir }}/sandbox"
+
+  vars_files:
+    - vars/urls.yml
+  
+  tasks:
+    - name: Create required directories
+      include: generics/file_action.yml filename={{ item }} state=directory
+      with_items:
+        - "{{ sandbox_install_dir }}"
+        - "{{ sandbox_data_dir }}"
+
+    - name: Configure SSH
+      include_role:
+        name: setup_ssh
+
+    - include_role:
+        name: install_jdk
+      when: ( components | length > 0)
+
+    - include_role:
+        name: install_hdfs
+      when: ('HDFS' in components) or 
+            ('YARN' in components) or
+            ('HIVE' in components) or
+            ('HBASE' in components) or
+            ('SQOOP' in components) or
+            ('SPARK' in components)
+
+    - include_role:
+        name: install_yarn
+      when: ('YARN' in components) or
+            ('HIVE' in components) or
+            ('SQOOP' in components) or 
+            ('SPARK' in components)
+
+    - include_role:
+        name: install_tez
+      when: ('HIVE' in components)
+
+    - include_role:
+        name: install_hive
+      when: ('HIVE' in components)
+
+    - include_role:
+        name: install_zookeeper
+      when: ('HBASE' in components) AND 
+            ('KAFKA' in components)
+
+    - include_role:
+        name: install_hbase
+      when: ('HBASE' in components)
+
+    - include_role:
+        name: install_sqoop
+      when: ('SQOOP' in components)
+
+    - include_role:
+        name: install_flume
+      when: ('FLUME' in components) 
+
+    - include_role:
+        name: install_kafka
+      when: ('KAFKA' in components)
+
+    - include_role:
+        name: install_spark
+      when: ('SPARK' in components)
+

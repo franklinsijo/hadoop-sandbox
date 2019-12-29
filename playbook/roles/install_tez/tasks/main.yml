@@ -1,0 +1,80 @@
+# Installs Tez
+---
+- set_fact:
+    tez_tarball: "{{ sb_install_dir }}/{{ tez.filename }}"
+
+- name: Download Tez binary tarball
+  get_url:
+    url: "{{ tez.url }}"
+    dest: "{{ tez_tarball }}"
+
+- name: Extract downloaded tarball
+  unarchive:
+    src: "{{ tez_tarball }}"
+    dest: "{{ sb_install_dir }}"
+    owner: "{{ exec_user }}"
+    group: "{{ exec_user }}"
+    remote_src: yes
+
+- set_fact:
+    tez_home: "{{ sb_install_dir }}/{{ tez.creates }}"
+
+- name: Starting HDFS Namenode
+  command: "{{ hadoop_sbin }}/hadoop-daemon.sh start namenode"
+  become: no
+
+- name: Starting HDFS Datanode
+  command: "{{ hadoop_sbin }}/hadoop-daemon.sh start datanode"
+  become: no
+
+- name: Wait for Namenode 
+  wait_for: 
+    port: 8020
+
+- name: Wait for Safemode 
+  command: "{{ hadoop_bin }}/hdfs dfsadmin -safemode wait"
+  become: no
+
+- name: Create 'tez' directory in HDFS
+  command: "{{ hadoop_bin }}/hdfs dfs -mkdir /tez"
+  become: no
+
+- name: Upload tez archive to HDFS
+  command: "{{ hadoop_bin }}/hdfs dfs -put {{ tez_home }}/share/tez.tar.gz /tez/tez.tar.gz"
+  become: no
+
+- name: Stopping HDFS Namenode
+  command: "{{ hadoop_sbin }}/hadoop-daemon.sh stop namenode"
+  become: no
+
+- name: Stopping HDFS Datanode
+  command: "{{ hadoop_sbin }}/hadoop-daemon.sh stop datanode"
+  become: no
+
+- name: Configure Tez
+  copy:
+    src: "tez-site.xml"
+    dest: "{{ tez_home }}/conf/tez-site.xml"
+    owner: "{{ exec_user }}"
+    group: "{{ exec_user }}"
+
+- name: Cleanup redundant jars
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ tez_home }}/lib/slf4j*.jar"
+
+- name: Update bashrc for Tez
+  lineinfile:
+    path: /etc/profile
+    line: 'export {{ item.key }}={{ item.val }}'
+  with_items:
+    - { key: 'TEZ_HOME', val: '{{ tez_home }}' }
+    - { key: 'HADOOP_CLASSPATH', val: '{{ tez_home }}/*:{{ tez_home }}/conf/:{{ tez_home }}/lib/*:$HADOOP_CLASSPATH'}
+  when: os == 'Debian' or os == 'Ubuntu'
+
+- name: Delete downloaded tarball
+  file:
+    path: "{{ tez_tarball }}"
+    state: absent

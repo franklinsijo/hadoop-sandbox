@@ -1,0 +1,58 @@
+# Installs Hadoop and Configures HDFS
+--- 
+- set_fact:
+    hadoop_tarball: "{{ sb_install_dir }}/{{ hadoop.filename }}"
+
+- name: Download Hadoop binary tarball
+  get_url:
+    url: "{{ hadoop.url }}"
+    dest: "{{ hadoop_tarball }}"
+
+- name: Extract downloaded tarball
+  unarchive:
+    src: "{{ hadoop_tarball }}"
+    dest: "{{ sb_install_dir }}"
+    owner: "{{ exec_user }}"
+    group: "{{ exec_user }}"
+    remote_src: yes
+
+- set_fact:
+    hadoop_home: "{{ sb_install_dir }}/{{ hadoop.creates }}"
+    hadoop_bin: "{{ sb_install_dir }}/{{ hadoop.creates }}/bin"
+    hadoop_sbin: "{{ sb_install_dir }}/{{ hadoop.creates }}/sbin"
+    hadoop_conf: "{{ sb_install_dir }}/{{ hadoop.creates }}/etc/hadoop"
+
+- name: Configure HDFS - Step 1
+  template:
+    src: "{{ item }}"
+    dest: "{{ hadoop_conf }}/{{ item | basename | regex_replace('.j2','') }}"
+    owner: "{{ exec_user }}"
+    group: "{{ exec_user }}"
+  with_fileglob:
+    - ../templates/*
+
+- name: Configure HDFS - Step 2
+  lineinfile:
+    path: "{{ hadoop_conf }}/hadoop-env.sh"
+    regexp: '^export JAVA_HOME='
+    line: "export JAVA_HOME={{ java_home }}"
+
+- name: Format Namenode
+  command: "{{ hadoop_bin }}/hdfs namenode -format"
+  become: no
+
+- name: Update bashrc for HDFS
+  lineinfile:
+    path: /etc/profile
+    line: 'export {{ item.key }}={{ item.val }}'
+  with_items:
+    - { key: 'HADOOP_PREFIX', val: '{{ hadoop_home }}' }
+    - { key: 'HADOOP_HOME', val: '{{ hadoop_home }}' }
+    - { key: 'HADOOP_CONF_DIR', val: '{{ hadoop_conf }}' }
+    - { key: 'PATH', val: '{{ hadoop_bin }}:{{ hadoop_sbin }}:$PATH' }
+  when: os == 'Debian' or os == 'Ubuntu'
+
+- name: Delete downloaded tarball
+  file:
+    path: "{{ hadoop_tarball }}"
+    state: absent

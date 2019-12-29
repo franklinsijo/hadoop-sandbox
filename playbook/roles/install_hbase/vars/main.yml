@@ -1,0 +1,2 @@
+---
+zookeeper_datadir: "{{ sb_data_dir }}/zookeeper/"

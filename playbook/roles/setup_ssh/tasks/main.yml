@@ -1,0 +1,39 @@
+# Install SSH and Setup Passwordless login
+---
+- name: Install OpenSSH
+  apt:
+    name: openssh-server
+    state: present
+  when: os == 'Debian' or os == 'Ubuntu'
+
+- name: Restart SSH
+  service:
+    name: ssh
+    state: restarted
+  when: os == 'Debian' or os == 'Ubuntu'
+  
+- name: Generate SSH Keypair Passwordless Access
+  user:
+    name: '{{ exec_user }}'
+    generate_ssh_key: yes
+    ssh_key_file: .ssh/id_rsa
+
+- name: Authorize the Public Key
+  authorized_key:
+    user: '{{ exec_user }}'
+    state: present
+    key: "{{ lookup('file', '/home/{{ exec_user }}/.ssh/id_rsa.pub') }}"
+
+- name: Update known hosts - Part 1
+  known_hosts:
+    name: localhost
+    state: present
+    key: "{{ lookup('pipe', 'ssh-keyscan -t rsa localhost') }}"
+  become: no
+
+- name: Update known hosts - Part 2
+  known_hosts:
+    name: 0.0.0.0
+    state: present
+    key: "{{ lookup('pipe', 'ssh-keyscan -t rsa 0.0.0.0') }}"
+  become: no

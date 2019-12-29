@@ -1,0 +1,14 @@
+# Configures YARN
+--- 
+- name: Configure YARN
+  copy:
+    src: "{{ item }}"
+    dest: "{{ hadoop_conf }}/{{ item | basename }}"
+    owner: "{{ exec_user }}"
+    group: "{{ exec_user }}"
+  with_fileglob:
+    - ../files/*
+
+- name: Install mrjob module
+  pip:
+    name: mrjob

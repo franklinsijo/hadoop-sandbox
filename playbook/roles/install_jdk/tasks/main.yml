@@ -1,0 +1,28 @@
+# Installs JDK
+---
+- set_fact:
+    jdk_tarball: "{{ sandbox_install_dir }}/{{ jdk[arch].filename }}"
+
+- name: Download JDK binary tarball
+  command: "wget -q -O {{ jdk_tarball }} --no-check-certificate --no-cookies --header 'Cookie: oraclelicense=accept-securebackup-cookie' {{ jdk[arch].url }}"
+
+- name: Extract downloaded tarball
+  include: generics/download_extract.yml component={{ jdk[arch] }} download=false
+
+- name: Update bashrc for JDK
+  include: generics/update_profile.yml line={{ item }}
+  with_items:
+    - { key: 'JAVA_HOME', val: '{{ sandbox_install_dir }}/{{ jdk[arch].creates }}' }
+    - { key: 'PATH', val: '{{ sandbox_install_dir }}/{{ jdk[arch].creates }}/bin:$PATH' }  
+
+- name: Delete downloaded tarball
+  include: generics/file_action.yml filename={{ jdk_tarball }} state=absent
+
+- name: Update bashrc for JDK
+  lineinfile:
+    path: /etc/profile
+    line: 'export {{ item.key }}={{ item.val }}'
+  with_items:
+    - { key: 'JAVA_HOME', val: '{{ java_home }}' }
+    - { key: 'PATH', val: '{{ java_bin }}:$PATH' }
+  when: os == 'Debian' or os == 'Ubuntu'

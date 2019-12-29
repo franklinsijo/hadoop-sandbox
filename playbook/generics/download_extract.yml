@@ -1,0 +1,18 @@
+### Downloads and Extracts the tar archive of the component (user provided). download and extract flags can be set.
+---
+- set_fact:
+    download_flag: "{{ download | default('true') }}"
+    extract_flag: "{{ extract | default('true') }}"
+
+- get_url:
+    url: "{{ component.url }}"
+    dest: "{{ sandbox_install_dir }}/{{ component.filename }}"
+  when: download_flag == true
+
+- unarchive:
+    src: "{{ sandbox_install_dir }}/{{ component.filename }}"
+    dest: "{{ sandbox_install_dir }}"
+    owner: "{{ exec_user }}"
+    group: "{{ exec_user }}"
+    remote_src: yes
+  when: extract_flag == true

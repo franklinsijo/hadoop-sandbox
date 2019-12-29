@@ -1,0 +1,59 @@
+# Mirror URLS to download sandbox components
+---
+jdk: 
+  32bit: 
+    url: http://download.oracle.com/otn-pub/java/jdk/8u171-b11/512cd62ec5174c3487ac17c61aaa89e8/jdk-8u171-linux-i586.tar.gz
+    filename: jdk-8u171-linux-i586.tar.gz
+    creates: jdk1.8.0_171
+  64bit:  
+    url: http://download.oracle.com/otn-pub/java/jdk/8u171-b11/512cd62ec5174c3487ac17c61aaa89e8/jdk-8u171-linux-x64.tar.gz
+    filename: jdk-8u171-linux-x64.tar.gz
+    creates: jdk1.8.0_171
+
+hadoop: 
+  url: http://archive.apache.org/dist/hadoop/common/hadoop-2.8.3/hadoop-2.8.3.tar.gz
+  filename: hadoop-2.8.3.tar.gz
+  creates: hadoop-2.8.3
+
+tez: 
+  url: http://archive.apache.org/dist/tez/0.9.1/apache-tez-0.9.1-bin.tar.gz
+  filename: apache-tez-0.9.1-bin.tar.gz
+  creates: apache-tez-0.9.1-bin
+  
+hive: 
+  url: http://archive.apache.org/dist/hive/hive-2.3.3/apache-hive-2.3.3-bin.tar.gz
+  filename: apache-hive-2.3.3-bin.tar.gz
+  creates: apache-hive-2.3.3-bin
+  version: 2.3.3
+  schema_version: 2.3.0
+
+zookeeper:
+  url: http://archive.apache.org/dist/zookeeper/stable/zookeeper-3.4.12.tar.gz
+  filename: zookeeper-3.4.12.tar.gz
+  creates: zookeeper-3.4.12
+
+hbase: 
+  url: http://archive.apache.org/dist/hbase/1.2.6/hbase-1.2.6-bin.tar.gz
+  filename: hbase-1.2.6-bin.tar.gz
+  creates: hbase-1.2.6
+
+sqoop: 
+  url: http://archive.apache.org/dist/sqoop/1.4.7/sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz
+  filename: sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz
+  creates: sqoop-1.4.7.bin__hadoop-2.6.0
+
+kafka: 
+  url: http://archive.apache.org/dist/kafka/1.0.0/kafka_2.11-1.0.0.tgz
+  filename: kafka_2.11-1.0.0.tgz
+  creates: kafka_2.11-1.0.0
+
+flume:
+  url: http://archive.apache.org/dist/flume/1.7.0/apache-flume-1.7.0-bin.tar.gz
+  filename: apache-flume-1.7.0-bin.tar.gz
+  creates: apache-flume-1.7.0-bin
+
+spark:
+  url: http://archive.apache.org/dist/spark/spark-2.3.0/spark-2.3.0-bin-hadoop2.7.tgz
+  filename: spark-2.3.0-bin-hadoop2.7.tgz
+  creates: spark-2.3.0-bin-hadoop2.7
+

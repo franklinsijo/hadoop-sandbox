@@ -1,0 +1,94 @@
+# Installs and Configures Hive
+---
+- set_fact:
+    hive_tarball: "{{ sb_install_dir }}/{{ hive.filename }}"
+
+- name: Download Hive binary tarball
+  get_url:
+    url: "{{ hive.url }}"
+    dest: "{{ hive_tarball }}"
+
+- name: Extract downloaded tarball
+  unarchive:
+    src: "{{ hive_tarball }}"
+    dest: "{{ sb_install_dir }}"
+    owner: "{{ exec_user }}"
+    group: "{{ exec_user }}"
+    remote_src: yes
+
+- set_fact:
+    hive_home: "{{ sb_install_dir }}/{{ hive.creates }}"
+
+- name: Starting HDFS Namenode
+  command: "{{ hadoop_sbin }}/hadoop-daemon.sh start namenode"
+  become: no
+
+- name: Starting HDFS Datanode
+  command: "{{ hadoop_sbin }}/hadoop-daemon.sh start datanode"
+  become: no
+
+- name: Wait for Namenode 
+  wait_for: 
+    port: 8020
+
+- name: Wait for Safemode 
+  command: "{{ hadoop_bin }}/hdfs dfsadmin -safemode wait"
+  become: no
+
+- name: Upload hive exec jar to HDFS
+  command: "{{ hadoop_bin }}/hdfs dfs -put {{ hive_home }}/lib/hive-exec-{{ hive.version }}.jar /tez/hive-exec-{{ hive.version }}.jar"
+  become: no
+
+- name: Stopping HDFS Namenode
+  command: "{{ hadoop_sbin }}/hadoop-daemon.sh stop namenode"
+  become: no
+
+- name: Stopping HDFS Datanode
+  command: "{{ hadoop_sbin }}/hadoop-daemon.sh stop datanode"
+  become: no
+
+- name: Configure Hive libraries
+  copy:
+    src: "{{ item }}"
+    dest: "{{ hive_home }}/lib/{{ item | basename }}"
+    owner: "{{ exec_user }}"
+    group: "{{ exec_user }}"
+  with_fileglob:
+    - ../files/*
+
+- name: Configure Hive 
+  template:
+    src: "{{ item }}"
+    dest: "{{ hive_home }}/conf/{{ item | basename | regex_replace('.j2','') }}"
+    owner: "{{ exec_user }}"
+    group: "{{ exec_user }}"
+  with_fileglob:
+    - ../templates/*
+
+- name: Create Metastore Database
+  mysql_db:
+    login_user: "{{ mysql_username }}"
+    login_password: "{{ mysql_password }}"
+    name: "{{ metastoredb }}"
+    state: present
+
+- name: Configure Metastore Database
+  command: "mysql -u{{ mysql_username }} -p{{ mysql_password }} -e 'use {{ metastoredb }}; source hive-schema-{{ hive.schema_version }}.mysql.sql;'"
+  args:
+    chdir: "{{ hive_home }}/scripts/metastore/upgrade/mysql/"
+
+- name: Update bashrc for Hive
+  lineinfile:
+    path: /etc/profile
+    line: 'export {{ item.key }}={{ item.val }}'
+  with_items:
+    - { key: 'HIVE_HOME', val: '{{ hive_home }}' }
+    - { key: 'HIVE_AUX_JARS_PATH', val: '{{ tez_home }}' }
+    - { key: 'HADOOP_CLASSPATH', val: '{{ hive_home }}/conf:{{ hive_home }}/lib/*:$HADOOP_CLASSPATH' }
+    - { key: 'PATH', val: '{{ hive_home }}/bin:$PATH' }
+  when: os == 'Debian' or os == 'Ubuntu'
+
+- name: Delete downloaded tarball
+  file:
+    path: "{{ hive_tarball }}"
+    state: absent

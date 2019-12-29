@@ -1,0 +1,14 @@
+<configuration>
+   <property>
+     <name>dfs.namenode.name.dir</name>
+     <value>{{ namenode_dir }}</value>
+   </property>
+   <property>
+     <name>dfs.datanode.data.dir</name>
+     <value>{{ datanode_dir }}</value>
+   </property>
+   <property>
+     <name>dfs.replication</name>
+     <value>{{ replication_factor }}</value>
+   </property>
+</configuration>
